@@ -18,6 +18,7 @@ public class ServerApplication {
         new Thread(()->{
             NettyServer nettyServer = new NettyServer();
             nettyServer.launch(8081);
+
         }).start();
     }
 
