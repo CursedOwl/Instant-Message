@@ -17,7 +17,15 @@ public class ProtocolFactory {
     }
 
     public static <T> IMProtocol<T> createProtocol(T body,byte encrypt,byte serializeAlgorithm,byte command,byte status) {
-        return null;
+        IMProtocol<T> imProtocol = new IMProtocol<>();
+        imProtocol.setMagic(MAGIC);
+        imProtocol.setVersion(VERSION);
+        imProtocol.setEncrypt(encrypt);
+        imProtocol.setSerializeAlgorithm(serializeAlgorithm);
+        imProtocol.setCommand(command);
+        imProtocol.setStatus(status);
+        imProtocol.setBody(body);
+        return imProtocol;
     }
 
 

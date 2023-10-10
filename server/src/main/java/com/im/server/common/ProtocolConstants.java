@@ -14,6 +14,8 @@ public class ProtocolConstants {
 
 //    数据类型，通常只有String
 
+    public static final byte OBJECT_TYPE = 0x00;
+
     public static final byte STRING_TYPE = 0x01;
 
     public static final byte INTEGER_TYPE = 0x02;
@@ -24,6 +26,7 @@ public class ProtocolConstants {
 
 
 //    指令类型
+    public static final byte CHECK_COMMAND = 0x00;
 
     public static final byte CONNECTION_REQUEST = 0x01;
 
@@ -36,6 +39,10 @@ public class ProtocolConstants {
 //    状态位
 
     public static final byte DEFAULT_STATUS=0x00;
+
+    public static final byte SUCCESS_STATUS=0x01;
+
+    public static final byte FAIL_STATUS=0x02;
 
 
 //    加密类型

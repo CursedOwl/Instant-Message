@@ -2,6 +2,7 @@ package com.im.server.codec;
 
 import com.im.server.common.ProtocolConstants;
 import com.im.server.entity.IMProtocol;
+import com.im.server.factory.ProtocolFactory;
 import com.im.server.processor.EncryptProcessor;
 import com.im.server.processor.SerializeProcessor;
 import io.netty.buffer.ByteBuf;
@@ -57,8 +58,29 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
                 .writeByte(imProtocol.getStatus())
                 .writeByte(imProtocol.getDataType())
                 .writeInt(imProtocol.getLength());
+        byte[] body;
+//        Serialize and Encrypt
         SerializeProcessor serializeProcessor = serializeProcessorMap.get(imProtocol.getSerializeAlgorithm());
-        byteBuf.writeBytes(serializeProcessor.serialize(imProtocol.getBody()));
+        switch (imProtocol.getDataType()){
+            case ProtocolConstants.OBJECT_TYPE:{
+                body = serializeProcessor.serialize(imProtocol.getBody());
+                break;
+            }
+            case ProtocolConstants.INTEGER_TYPE:
+            case ProtocolConstants.STRING_TYPE: {
+                body=imProtocol.getBody().toString().getBytes();
+                break;
+            }
+            default:{
+                log.error("Data type is not correct");
+                throw new ClassNotFoundException();
+            }
+        }
+
+        if(imProtocol.getEncrypt()!= ProtocolConstants.NO_ENCRYPT){
+            EncryptProcessor encryptProcessor = encryptProcessorMap.get(imProtocol.getEncrypt());
+            byteBuf.writeBytes(encryptProcessor.encrypt(body));
+        }
 
         channelHandlerContext.writeAndFlush(byteBuf);
     }
@@ -81,7 +103,12 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
            case READ_VERSION:{
                if ((temp=byteBuf.readByte()) != ProtocolConstants.VERSION) {
                    log.error("Version is not correct"+String.format("0x%02x", temp)+"]");
-
+                   IMProtocol<String> versionIsNotCorrect = ProtocolFactory.createProtocol("Version is not correct"
+                           , ProtocolConstants.NO_ENCRYPT, ProtocolConstants.JSON_ALGORITHM
+                           , ProtocolConstants.CHECK_COMMAND, ProtocolConstants.FAIL_STATUS);
+                   versionIsNotCorrect.setDataType(ProtocolConstants.STRING_TYPE);
+                   channelHandlerContext.writeAndFlush(versionIsNotCorrect);
+                   currentState=State.BAD_MESSAGE;
                    return;
                }
                currentState=State.READ_SERIALIZE_ALGORITHM;
@@ -121,19 +148,31 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
 
             case READ_DATA_TYPE:{
                 temp=byteBuf.readByte();
-                if(temp!=ProtocolConstants.STRING_TYPE&&temp!=ProtocolConstants.INTEGER_TYPE&&temp!=ProtocolConstants.BOOLEAN_TYPE&&temp!=ProtocolConstants.BYTE_TYPE){
-                    log.error("Data type is not correct"+String.format("0x%02x", temp)+"]");
-                    currentState=State.BAD_MESSAGE;
-                    return;
-                }
                 switch (temp){
+                    case ProtocolConstants.OBJECT_TYPE:{
+//                        TODO ?
+                        break;
+                    }
+                    case ProtocolConstants.STRING_TYPE:{
+                        log.info("/");
+                        break;
+                    }
                     case ProtocolConstants.INTEGER_TYPE:{
                         byteBuf.skipBytes(8);
                         currentState=State.READ_MAGIC;
                         return;
                     }
+                    case ProtocolConstants.BYTE_TYPE:
                     case ProtocolConstants.BOOLEAN_TYPE:{
                         byteBuf.skipBytes(5);
+                        currentState=State.READ_MAGIC;
+                        return;
+                    }
+
+                    default:{
+                        log.error("Data type is not correct"+String.format("0x%02x", temp)+"]");
+                        currentState=State.BAD_MESSAGE;
+                        return;
                     }
                 }
                 currentState=State.READ_BODY;
@@ -144,13 +183,13 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
 //                如果存在网络延迟，会导致半包，需要等待
                 if(byteBuf.readableBytes()<length){
                     byteBuf.resetReaderIndex();
+                    currentState=State.READ_MAGIC;
                     return;
                 }
                 byte[] body = new byte[length];
                 byteBuf.readBytes(body);
                 EncryptProcessor encryptProcessor = encryptProcessorMap.get(imMessage.getEncrypt());
                 byte[] decrypt = encryptProcessor.decrypt(body);
-
 
                 break;
             }
