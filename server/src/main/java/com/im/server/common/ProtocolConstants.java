@@ -31,9 +31,11 @@ public class ProtocolConstants {
 
     public static final byte CONNECTION_FINAL = 0x03;
 
+    public static final byte PUBLISH_COMMAND=0x04;
 
 //    状态位
 
+    public static final byte DEFAULT_STATUS=0x00;
 
 
 //    加密类型
@@ -41,6 +43,8 @@ public class ProtocolConstants {
         public static final byte NO_ENCRYPT = 0x00;
 
         public static final byte AES_ENCRYPT = 0x01;
+
+        public static final byte DES_ENCRYPT = 0x02;
 
 
 }

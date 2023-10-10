@@ -17,14 +17,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
 
-    private IMProtocol imProtocol;
+    private IMProtocol imMessage;
 
     private Integer badMessageCount=0;
-
-    private byte serializeType;
-
-    private byte encryptType;
-
 
     private final HashMap<Byte, SerializeProcessor> serializeProcessorMap;
 
@@ -42,7 +37,6 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
         READ_COMMAND,
         READ_STATUS,
         READ_DATA_TYPE,
-        READ_LENGTH,
         READ_BODY,
         BAD_MESSAGE
     }
@@ -51,6 +45,7 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
         this.encryptProcessorMap = encryptProcessorMap;
         this.serializeProcessorMap = serializeProcessorMap;
     }
+
 
     @Override
     protected void encode(ChannelHandlerContext channelHandlerContext, IMProtocol imProtocol, ByteBuf byteBuf) throws Exception {
@@ -61,8 +56,9 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
                 .writeByte(imProtocol.getCommand())
                 .writeByte(imProtocol.getStatus())
                 .writeByte(imProtocol.getDataType())
-                .writeInt(imProtocol.getLength())
-                .writeBytes(imProtocol.getBody());
+                .writeInt(imProtocol.getLength());
+        SerializeProcessor serializeProcessor = serializeProcessorMap.get(imProtocol.getSerializeAlgorithm());
+        byteBuf.writeBytes(serializeProcessor.serialize(imProtocol.getBody()));
 
         channelHandlerContext.writeAndFlush(byteBuf);
     }
@@ -85,7 +81,7 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
            case READ_VERSION:{
                if ((temp=byteBuf.readByte()) != ProtocolConstants.VERSION) {
                    log.error("Version is not correct"+String.format("0x%02x", temp)+"]");
-                   currentState=State.BAD_MESSAGE;
+
                    return;
                }
                currentState=State.READ_SERIALIZE_ALGORITHM;
@@ -98,13 +94,71 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
                     currentState=State.BAD_MESSAGE;
                     return;
                 }
-                serializeType=temp;
+                imMessage.setSerializeAlgorithm(temp);
                 currentState=State.READ_ENCRYPT;
+            }
+
+            case READ_ENCRYPT:{
+                temp=byteBuf.readByte();
+                if(temp!=ProtocolConstants.AES_ENCRYPT&&temp!=ProtocolConstants.DES_ENCRYPT&&temp!=ProtocolConstants.NO_ENCRYPT){
+                    log.error("Encrypt algorithm is not correct"+String.format("0x%02x", temp)+"]");
+                    currentState=State.BAD_MESSAGE;
+                    return;
+                }
+                imMessage.setEncrypt(temp);
+                currentState=State.READ_COMMAND;
+            }
+
+            case READ_COMMAND:{
+                imMessage.setCommand(byteBuf.readByte());
+                currentState=State.READ_STATUS;
+            }
+
+            case READ_STATUS:{
+                imMessage.setStatus(byteBuf.readByte());
+                currentState=State.READ_DATA_TYPE;
+            }
+
+            case READ_DATA_TYPE:{
+                temp=byteBuf.readByte();
+                if(temp!=ProtocolConstants.STRING_TYPE&&temp!=ProtocolConstants.INTEGER_TYPE&&temp!=ProtocolConstants.BOOLEAN_TYPE&&temp!=ProtocolConstants.BYTE_TYPE){
+                    log.error("Data type is not correct"+String.format("0x%02x", temp)+"]");
+                    currentState=State.BAD_MESSAGE;
+                    return;
+                }
+                switch (temp){
+                    case ProtocolConstants.INTEGER_TYPE:{
+                        byteBuf.skipBytes(8);
+                        currentState=State.READ_MAGIC;
+                        return;
+                    }
+                    case ProtocolConstants.BOOLEAN_TYPE:{
+                        byteBuf.skipBytes(5);
+                    }
+                }
+                currentState=State.READ_BODY;
+            }
+
+            case READ_BODY:{
+                int length = byteBuf.readInt();
+//                如果存在网络延迟，会导致半包，需要等待
+                if(byteBuf.readableBytes()<length){
+                    byteBuf.resetReaderIndex();
+                    return;
+                }
+                byte[] body = new byte[length];
+                byteBuf.readBytes(body);
+                EncryptProcessor encryptProcessor = encryptProcessorMap.get(imMessage.getEncrypt());
+                byte[] decrypt = encryptProcessor.decrypt(body);
+
+
+                break;
             }
 
             case BAD_MESSAGE:{
                 byteBuf.skipBytes(byteBuf.readableBytes());
                 badMessageCount+=1;
+                currentState=State.READ_MAGIC;
                 if (badMessageCount>5){
                     channelHandlerContext.close();
                 }

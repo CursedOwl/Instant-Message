@@ -4,7 +4,7 @@ package com.im.server.entity;
 /**
  * @ClassName 协议头各字段均用一个byte表示
  */
-public class IMProtocol {
+public class IMProtocol<T> {
     private byte magic;
 
     private byte version;
@@ -21,12 +21,12 @@ public class IMProtocol {
 
     private Integer length;
 
-    private byte[] body;
+    private T body;
 
     public IMProtocol() {
     }
 
-    public IMProtocol(byte magic, byte version, byte serializeAlgorithm, byte command, byte status, Integer length, byte[] body) {
+    public IMProtocol(byte magic, byte version, byte serializeAlgorithm, byte command, byte status, Integer length, T body) {
         this.magic = magic;
         this.version = version;
         this.serializeAlgorithm = serializeAlgorithm;
@@ -100,11 +100,11 @@ public class IMProtocol {
         this.length = length;
     }
 
-    public byte[] getBody() {
+    public T getBody() {
         return body;
     }
 
-    public void setBody(byte[] body) {
+    public void setBody(T body) {
         this.body = body;
     }
 }

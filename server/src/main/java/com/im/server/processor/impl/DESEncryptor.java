@@ -3,7 +3,7 @@ package com.im.server.processor.impl;
 import com.im.server.processor.EncryptProcessor;
 import io.netty.buffer.ByteBuf;
 
-public class AESEncryptor extends EncryptProcessor {
+public class DESEncryptor extends EncryptProcessor {
     @Override
     public byte[] encrypt(byte[] body) {
         return new byte[0];
@@ -18,6 +18,4 @@ public class AESEncryptor extends EncryptProcessor {
     public byte[] decrypt(byte[] body) {
         return new byte[0];
     }
-
-
 }
