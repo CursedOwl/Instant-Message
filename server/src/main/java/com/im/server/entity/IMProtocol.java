@@ -21,6 +21,8 @@ public class IMProtocol<T> {
 
     private Integer length;
 
+    private Class<?> clazz;
+
     private T body;
 
     public IMProtocol() {
@@ -34,6 +36,14 @@ public class IMProtocol<T> {
         this.status = status;
         this.length = length;
         this.body = body;
+    }
+
+    public Class<?> getClazz() {
+        return clazz;
+    }
+
+    public void setClazz(Class<?> clazz) {
+        this.clazz = clazz;
     }
 
     public byte getEncrypt() {
@@ -100,11 +110,27 @@ public class IMProtocol<T> {
         this.length = length;
     }
 
-    public T getBody() {
+    public Object getBody() {
         return body;
     }
 
     public void setBody(T body) {
         this.body = body;
+    }
+
+    @Override
+    public String toString() {
+        return "IMProtocol{" +
+                "magic=" + magic +
+                ", version=" + version +
+                ", serializeAlgorithm=" + serializeAlgorithm +
+                ", encrypt=" + encrypt +
+                ", command=" + command +
+                ", status=" + status +
+                ", dataType=" + dataType +
+                ", length=" + length +
+                ", clazz=" + clazz +
+                ", body=" + body +
+                '}';
     }
 }

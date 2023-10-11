@@ -28,13 +28,9 @@ public class ProtocolConstants {
 //    指令类型
     public static final byte CHECK_COMMAND = 0x00;
 
-    public static final byte CONNECTION_REQUEST = 0x01;
+    public static final byte CONNECTION_COMMAND = 0x01;
 
-    public static final byte CONNECTION_RESPONSE = 0x02;
-
-    public static final byte CONNECTION_FINAL = 0x03;
-
-    public static final byte PUBLISH_COMMAND=0x04;
+    public static final byte PUBLISH_COMMAND=0x02;
 
 //    状态位
 
@@ -43,6 +39,12 @@ public class ProtocolConstants {
     public static final byte SUCCESS_STATUS=0x01;
 
     public static final byte FAIL_STATUS=0x02;
+
+    public static final byte CONNECTION_FIRST=0x01;
+
+    public static final byte CONNECTION_SECOND=0x02;
+
+    public static final byte CONNECTION_THIRD=0x03;
 
 
 //    加密类型

@@ -3,11 +3,12 @@ package com.im.server.codec;
 import com.im.server.common.ProtocolConstants;
 import com.im.server.entity.IMProtocol;
 import com.im.server.factory.ProtocolFactory;
+import com.im.server.message.ConnectionRequest;
 import com.im.server.processor.EncryptProcessor;
 import com.im.server.processor.SerializeProcessor;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageCodec;
+import io.netty.handler.codec.ByteToMessageDecoder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -16,9 +17,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 // 作为自定义协议的decode与encode
 @Slf4j
-public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
+public class IMProtocolDecoder extends ByteToMessageDecoder {
 
-    private IMProtocol imMessage;
+    private IMProtocol<Object> imMessage;
 
     private Integer badMessageCount=0;
 
@@ -42,47 +43,9 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
         BAD_MESSAGE
     }
 
-    public IMProtocolCodec(HashMap<Byte,EncryptProcessor> encryptProcessorMap,HashMap<Byte,SerializeProcessor> serializeProcessorMap){
+    public IMProtocolDecoder(HashMap<Byte,EncryptProcessor> encryptProcessorMap, HashMap<Byte,SerializeProcessor> serializeProcessorMap){
         this.encryptProcessorMap = encryptProcessorMap;
         this.serializeProcessorMap = serializeProcessorMap;
-    }
-
-
-    @Override
-    protected void encode(ChannelHandlerContext channelHandlerContext, IMProtocol imProtocol, ByteBuf byteBuf) throws Exception {
-        byteBuf.writeByte(imProtocol.getMagic())
-                .writeByte(imProtocol.getVersion())
-                .writeByte(imProtocol.getSerializeAlgorithm())
-                .writeByte(imProtocol.getEncrypt())
-                .writeByte(imProtocol.getCommand())
-                .writeByte(imProtocol.getStatus())
-                .writeByte(imProtocol.getDataType())
-                .writeInt(imProtocol.getLength());
-        byte[] body;
-//        Serialize and Encrypt
-        SerializeProcessor serializeProcessor = serializeProcessorMap.get(imProtocol.getSerializeAlgorithm());
-        switch (imProtocol.getDataType()){
-            case ProtocolConstants.OBJECT_TYPE:{
-                body = serializeProcessor.serialize(imProtocol.getBody());
-                break;
-            }
-            case ProtocolConstants.INTEGER_TYPE:
-            case ProtocolConstants.STRING_TYPE: {
-                body=imProtocol.getBody().toString().getBytes();
-                break;
-            }
-            default:{
-                log.error("Data type is not correct");
-                throw new ClassNotFoundException();
-            }
-        }
-
-        if(imProtocol.getEncrypt()!= ProtocolConstants.NO_ENCRYPT){
-            EncryptProcessor encryptProcessor = encryptProcessorMap.get(imProtocol.getEncrypt());
-            byteBuf.writeBytes(encryptProcessor.encrypt(body));
-        }
-
-        channelHandlerContext.writeAndFlush(byteBuf);
     }
 
     @Override
@@ -102,10 +65,10 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
            }
            case READ_VERSION:{
                if ((temp=byteBuf.readByte()) != ProtocolConstants.VERSION) {
-                   log.error("Version is not correct"+String.format("0x%02x", temp)+"]");
+                   log.error("Version is not correct:["+String.format("0x%02x", temp)+"]");
                    IMProtocol<String> versionIsNotCorrect = ProtocolFactory.createProtocol("Version is not correct"
                            , ProtocolConstants.NO_ENCRYPT, ProtocolConstants.JSON_ALGORITHM
-                           , ProtocolConstants.CHECK_COMMAND, ProtocolConstants.FAIL_STATUS);
+                           , ProtocolConstants.CHECK_COMMAND, ProtocolConstants.FAIL_STATUS, ProtocolConstants.STRING_TYPE);
                    versionIsNotCorrect.setDataType(ProtocolConstants.STRING_TYPE);
                    channelHandlerContext.writeAndFlush(versionIsNotCorrect);
                    currentState=State.BAD_MESSAGE;
@@ -149,12 +112,9 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
             case READ_DATA_TYPE:{
                 temp=byteBuf.readByte();
                 switch (temp){
+                    case ProtocolConstants.STRING_TYPE:
                     case ProtocolConstants.OBJECT_TYPE:{
-//                        TODO ?
-                        break;
-                    }
-                    case ProtocolConstants.STRING_TYPE:{
-                        log.info("/");
+                        imMessage.setDataType(temp);
                         break;
                     }
                     case ProtocolConstants.INTEGER_TYPE:{
@@ -189,8 +149,15 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
                 byte[] body = new byte[length];
                 byteBuf.readBytes(body);
                 EncryptProcessor encryptProcessor = encryptProcessorMap.get(imMessage.getEncrypt());
-                byte[] decrypt = encryptProcessor.decrypt(body);
+                SerializeProcessor serializeProcessor = serializeProcessorMap.get(imMessage.getSerializeAlgorithm());
+                switch (imMessage.getCommand()){
+                    case ProtocolConstants.CONNECTION_COMMAND:{
+                        imMessage.setClazz(ConnectionRequest.class);
+                        imMessage.setBody(serializeProcessor.deserialize(encryptProcessor.decrypt(body), ConnectionRequest.class));
+                        break;
+                    }
 
+                }
                 break;
             }
 
@@ -201,12 +168,11 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol>  {
                 if (badMessageCount>5){
                     channelHandlerContext.close();
                 }
+
                 break;
             }
        }
     }
-    public IMProtocol buildResponse(){
-        return new IMProtocol();
-    }
+
 
 }
