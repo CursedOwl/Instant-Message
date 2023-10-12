@@ -1,9 +1,8 @@
 package com.im.server.server;
 
-import com.im.server.codec.IMProtocolEncoder;
-import com.im.server.codec.IMProtocolDecoder;
+import com.im.server.codec.IMProtocolCodec;
 import com.im.server.common.ProtocolConstants;
-import com.im.server.handler.IMProtocolHandler;
+import com.im.server.handler.IMProtocolInboundHandler;
 import com.im.server.processor.EncryptProcessor;
 import com.im.server.processor.SerializeProcessor;
 import com.im.server.processor.impl.AESEncryptor;
@@ -50,9 +49,10 @@ public class NettyServer {
                         @Override
                         protected void initChannel(NioSocketChannel nioSocketChannel) throws Exception {
                             nioSocketChannel.pipeline()
-                                    .addLast(new IMProtocolEncoder(encryptProcessorMap,serializeProcessorMap))
-                                    .addLast(new IMProtocolDecoder(encryptProcessorMap,serializeProcessorMap))
-                                    .addLast(new IMProtocolHandler(userService));
+//                                    .addLast(new IMProtocolOutbound(encryptProcessorMap,serializeProcessorMap))
+                                    .addLast(new IMProtocolCodec(encryptProcessorMap,serializeProcessorMap))
+                                    .addLast(new IMProtocolInboundHandler(userService));
+
                         }
                     }).bind(port);
 

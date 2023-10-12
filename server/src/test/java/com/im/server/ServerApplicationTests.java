@@ -1,33 +1,79 @@
 package com.im.server;
 
+import com.im.server.codec.IMProtocolCodec;
+import com.im.server.common.ProtocolConstants;
+import com.im.server.entity.IMProtocol;
+import com.im.server.factory.ProtocolFactory;
+import com.im.server.handler.IMProtocolInboundHandler;
+import com.im.server.processor.EncryptProcessor;
+import com.im.server.processor.SerializeProcessor;
+import com.im.server.processor.impl.AESEncryptor;
+import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.embedded.EmbeddedChannel;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioSocketChannel;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
 
 class ServerApplicationTests {
 
     @Test
-    void contextLoads() throws Exception {
-        try(Socket socket=new Socket("localhost",8081)){
-            OutputStream outputStream = socket.getOutputStream();
-            InputStream inputStream = socket.getInputStream();
+    void contextLoads() throws InterruptedException, IOException {
+        NioEventLoopGroup group = new NioEventLoopGroup();
+        Bootstrap bootstrap = new Bootstrap();
+        bootstrap.group(group)
+                // 指定要使用的Channel实现类
+                .channel(NioSocketChannel.class)
+                // 设置Channel选项
+                .option(ChannelOption.TCP_NODELAY, true)
+                // 设置Channel处理器
+                .handler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    public void initChannel(SocketChannel ch) throws Exception {
+                        ch.pipeline().addLast(new ClientInboundHandler());
+                    }
+                });
 
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            DataOutputStream dos = new DataOutputStream(bos);
-            dos.writeByte(0x77);
-            dos.writeByte(0xaa);
-            byte[] bytes = bos.toByteArray();
+        // 连接到服务器
+        Channel future = bootstrap.connect("localhost", 8081).sync().channel();
 
-            outputStream.write(bytes);
-            Thread.sleep(5000);
-            byte[] bytes1 = inputStream.readAllBytes();
-            for (int i = 0; i < bytes1.length; i++) {
-                System.out.printf("0x%02x%n",bytes1[i]);
-            }
-        }
+        // 发送消息到服务器
+        ByteBuf buf = Unpooled.copiedBuffer(new byte[]{0x77,0x22});
+        future.writeAndFlush(buf);
 
+        // 等待连接关闭
+        future.closeFuture().sync();
+
+    }
+
+
+    private final HashMap<Byte, EncryptProcessor> encryptProcessorMap=new HashMap<>();
+
+    private final HashMap<Byte, SerializeProcessor> serializeProcessorMap= new HashMap<>();
+    @Test
+    public void contextLoads3(){
+        encryptProcessorMap.put(ProtocolConstants.AES_ENCRYPT,new AESEncryptor());
+        EmbeddedChannel channel = new EmbeddedChannel(
+                new IMProtocolCodec(encryptProcessorMap, serializeProcessorMap),
+                new IMProtocolInboundHandler(null));
+
+        ByteBuf byteBuf = Unpooled.copiedBuffer(new byte[]{0x77, 0x22});
+        channel.writeInbound(byteBuf);
+
+        IMProtocol<String> versionIsNotCorrect = ProtocolFactory.createProtocol("Version is not correct"
+                , ProtocolConstants.NO_ENCRYPT, ProtocolConstants.JSON_ALGORITHM
+                , ProtocolConstants.CHECK_COMMAND, ProtocolConstants.FAIL_STATUS, ProtocolConstants.STRING_TYPE);
+        versionIsNotCorrect.setDataType(ProtocolConstants.STRING_TYPE);
+        channel.writeOutbound(versionIsNotCorrect);
     }
 
 }

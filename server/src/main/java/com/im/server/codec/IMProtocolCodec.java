@@ -8,7 +8,7 @@ import com.im.server.processor.EncryptProcessor;
 import com.im.server.processor.SerializeProcessor;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
+import io.netty.handler.codec.ByteToMessageCodec;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 // 作为自定义协议的decode与encode
 @Slf4j
-public class IMProtocolDecoder extends ByteToMessageDecoder {
+public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol<Object>> {
 
     private IMProtocol<Object> imMessage;
 
@@ -43,16 +43,59 @@ public class IMProtocolDecoder extends ByteToMessageDecoder {
         BAD_MESSAGE
     }
 
-    public IMProtocolDecoder(HashMap<Byte,EncryptProcessor> encryptProcessorMap, HashMap<Byte,SerializeProcessor> serializeProcessorMap){
+    public IMProtocolCodec(HashMap<Byte,EncryptProcessor> encryptProcessorMap, HashMap<Byte,SerializeProcessor> serializeProcessorMap){
         this.encryptProcessorMap = encryptProcessorMap;
         this.serializeProcessorMap = serializeProcessorMap;
+    }
+
+    @Override
+    protected void encode(ChannelHandlerContext channelHandlerContext, IMProtocol imProtocol, ByteBuf byteBuf) throws Exception {
+        log.info(imProtocol.toString());
+        byteBuf.writeByte(imProtocol.getMagic())
+                .writeByte(imProtocol.getVersion())
+                .writeByte(imProtocol.getSerializeAlgorithm())
+                .writeByte(imProtocol.getEncrypt())
+                .writeByte(imProtocol.getCommand())
+                .writeByte(imProtocol.getStatus())
+                .writeByte(imProtocol.getDataType());
+
+        byte[] body;
+//        Serialize and Encrypt
+        SerializeProcessor serializeProcessor = serializeProcessorMap.get(imProtocol.getSerializeAlgorithm());
+        switch (imProtocol.getDataType()){
+            case ProtocolConstants.OBJECT_TYPE:{
+                body = serializeProcessor.serialize(imProtocol.getBody());
+                break;
+            }
+            case ProtocolConstants.INTEGER_TYPE:
+            case ProtocolConstants.STRING_TYPE: {
+                body=imProtocol.getBody().toString().getBytes();
+                break;
+            }
+            default:{
+                log.error("Data type is not correct");
+                throw new ClassNotFoundException();
+            }
+        }
+        if(imProtocol.getEncrypt()!= ProtocolConstants.NO_ENCRYPT){
+            EncryptProcessor encryptProcessor = encryptProcessorMap.get(imProtocol.getEncrypt());
+            byte[] encrypt = encryptProcessor.encrypt(body);
+            byteBuf.writeInt(encrypt.length);
+            byteBuf.writeBytes(encrypt);
+        }else{
+//            log.info("No encrypt");
+            byteBuf.writeInt(body.length);
+            byteBuf.writeBytes(body);
+        }
+        //        channelHandlerContext.write(byteBuf);
+//        channelHandlerContext.writeAndFlush(byteBuf);
     }
 
     @Override
 
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
 //        Thread.sleep(500);
-//        log.info("["+channelHandlerContext.channel()+"]Remains:"+byteBuf.readableBytes());
+        log.info("["+channelHandlerContext.channel()+"]Remains:"+byteBuf.readableBytes());
         byte temp;
         switch (currentState){
            case READ_MAGIC:{
@@ -70,8 +113,8 @@ public class IMProtocolDecoder extends ByteToMessageDecoder {
                            , ProtocolConstants.NO_ENCRYPT, ProtocolConstants.JSON_ALGORITHM
                            , ProtocolConstants.CHECK_COMMAND, ProtocolConstants.FAIL_STATUS, ProtocolConstants.STRING_TYPE);
                    versionIsNotCorrect.setDataType(ProtocolConstants.STRING_TYPE);
-                   channelHandlerContext.writeAndFlush(versionIsNotCorrect);
-                   currentState=State.BAD_MESSAGE;
+//                   channelHandlerContext.channel().writeAndFlush(versionIsNotCorrect);
+                   list.add(versionIsNotCorrect);
                    return;
                }
                currentState=State.READ_SERIALIZE_ALGORITHM;
