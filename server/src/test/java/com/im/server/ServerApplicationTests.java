@@ -66,7 +66,7 @@ class ServerApplicationTests {
         encryptProcessorMap.put(ProtocolConstants.AES_ENCRYPT,new AESEncryptor());
         EmbeddedChannel channel = new EmbeddedChannel(
                 new IMProtocolCodec(encryptProcessorMap, serializeProcessorMap),
-                new IMProtocolInboundHandler(null,null,null,null);
+                new IMProtocolInboundHandler(null,null,null,null));
 
         ByteBuf byteBuf = Unpooled.copiedBuffer(new byte[]{0x77, 0x22});
         channel.writeInbound(byteBuf);
