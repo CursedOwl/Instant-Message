@@ -51,8 +51,8 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol<Object>> {
     @Override
     protected void encode(ChannelHandlerContext channelHandlerContext, IMProtocol imProtocol, ByteBuf byteBuf) throws Exception {
         log.info(imProtocol.toString());
-        byteBuf.writeByte(imProtocol.getMagic())
-                .writeByte(imProtocol.getVersion())
+        byteBuf.writeByte(ProtocolConstants.MAGIC)
+                .writeByte(ProtocolConstants.VERSION)
                 .writeByte(imProtocol.getSerializeAlgorithm())
                 .writeByte(imProtocol.getEncrypt())
                 .writeByte(imProtocol.getCommand())
@@ -94,7 +94,9 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol<Object>> {
     @Override
 
     protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
-//        Thread.sleep(500);
+        if(resetRequest.get()){
+            resetNow();
+        }
         log.info("["+channelHandlerContext.channel()+"]Remains:"+byteBuf.readableBytes());
         byte temp;
         switch (currentState){
@@ -187,6 +189,7 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol<Object>> {
                 if(byteBuf.readableBytes()<length){
                     byteBuf.resetReaderIndex();
                     currentState=State.READ_MAGIC;
+                    resetRequest.set(true);
                     return;
                 }
                 byte[] body = new byte[length];
@@ -197,6 +200,8 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol<Object>> {
                     case ProtocolConstants.CONNECTION_COMMAND:{
                         imMessage.setClazz(ConnectionRequest.class);
                         imMessage.setBody(serializeProcessor.deserialize(encryptProcessor.decrypt(body), ConnectionRequest.class));
+                        list.add(imMessage);
+                        resetNow();
                         break;
                     }
 
@@ -207,14 +212,21 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol<Object>> {
             case BAD_MESSAGE:{
                 byteBuf.skipBytes(byteBuf.readableBytes());
                 badMessageCount+=1;
-                currentState=State.READ_MAGIC;
+                resetRequest.set(true);
+                list.add(ProtocolFactory.createNoEncJsonProtocol("Bad Message"
+                        , ProtocolConstants.BAD_MESSAGE_COMMAND, ProtocolConstants.FAIL_STATUS));
                 if (badMessageCount>5){
                     channelHandlerContext.close();
                 }
-
                 break;
             }
        }
+    }
+
+    private void resetNow() {
+        resetRequest.lazySet(true);
+        currentState=State.READ_MAGIC;
+        imMessage=null;
     }
 
 

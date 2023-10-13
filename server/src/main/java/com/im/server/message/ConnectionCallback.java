@@ -3,14 +3,17 @@ package com.im.server.message;
 import com.im.server.common.LoginConstants;
 
 public class ConnectionCallback {
-    private boolean success;
-
+    private static boolean success;
     private byte status;
 
     private String message;
 
     public static ConnectionCallback fail(String message,byte status){
         return new ConnectionCallback(false, status, message);
+    }
+
+    public static ConnectionCallback success(String message,byte status){
+        return new ConnectionCallback(true, status, message);
     }
 
     public ConnectionCallback(boolean success, byte status, String message) {

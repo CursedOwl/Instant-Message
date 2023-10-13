@@ -49,7 +49,9 @@ class ServerApplicationTests {
         // 发送消息到服务器
         ByteBuf buf = Unpooled.copiedBuffer(new byte[]{0x77,0x22});
         future.writeAndFlush(buf);
-
+        Thread.sleep(1000);
+        ByteBuf buf2 = Unpooled.copiedBuffer(new byte[]{0x77,0x22});
+        future.writeAndFlush(buf2);
         // 等待连接关闭
         future.closeFuture().sync();
 
@@ -74,6 +76,11 @@ class ServerApplicationTests {
                 , ProtocolConstants.CHECK_COMMAND, ProtocolConstants.FAIL_STATUS, ProtocolConstants.STRING_TYPE);
         versionIsNotCorrect.setDataType(ProtocolConstants.STRING_TYPE);
         channel.writeOutbound(versionIsNotCorrect);
+    }
+
+    @Test
+    public void test(){
+
     }
 
 }

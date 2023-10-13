@@ -16,6 +16,10 @@ public class ProtocolFactory {
         return createProtocol(body,AES_ENCRYPT,PROTOBUF_ALGORITHM,command,status,OBJECT_TYPE);
     }
 
+    public static <T> IMProtocol<T> createNoEncJsonProtocol(T body,byte command,byte status) {
+        return createProtocol(body,NO_ENCRYPT,JSON_ALGORITHM,command,status,OBJECT_TYPE);
+    }
+
     public static <T> IMProtocol<T> createProtocol(T body,byte encrypt,byte serializeAlgorithm,byte command,byte status,byte dataType) {
         IMProtocol<T> imProtocol = new IMProtocol<>();
         imProtocol.setMagic(MAGIC);

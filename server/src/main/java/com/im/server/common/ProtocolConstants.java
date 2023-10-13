@@ -32,13 +32,15 @@ public class ProtocolConstants {
 
     public static final byte PUBLISH_COMMAND=0x02;
 
+    public static final byte BAD_MESSAGE_COMMAND=0x03;
+
 //    状态位
 
     public static final byte DEFAULT_STATUS=0x00;
 
-    public static final byte SUCCESS_STATUS=0x01;
+    public static final byte SUCCESS_STATUS=0x66;
 
-    public static final byte FAIL_STATUS=0x02;
+    public static final byte FAIL_STATUS=0x77;
 
     public static final byte CONNECTION_FIRST=0x01;
 

@@ -6,8 +6,10 @@ import com.im.server.handler.IMProtocolInboundHandler;
 import com.im.server.processor.EncryptProcessor;
 import com.im.server.processor.SerializeProcessor;
 import com.im.server.processor.impl.AESEncryptor;
+import com.im.server.service.MessageService;
 import com.im.server.service.UserService;
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
@@ -16,9 +18,11 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Component
@@ -33,6 +37,14 @@ public class NettyServer {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private MessageService messageService;
+
+    @Value("${im.secret}")
+    private String secret;
+
+    private final ConcurrentHashMap<Integer, Channel> ac=new ConcurrentHashMap<>();
 
     public NettyServer(){
         this.encryptProcessorMap = new HashMap<>();
@@ -51,7 +63,7 @@ public class NettyServer {
                             nioSocketChannel.pipeline()
 //                                    .addLast(new IMProtocolOutbound(encryptProcessorMap,serializeProcessorMap))
                                     .addLast(new IMProtocolCodec(encryptProcessorMap,serializeProcessorMap))
-                                    .addLast(new IMProtocolInboundHandler(userService));
+                                    .addLast(new IMProtocolInboundHandler(secret,ac,userService,messageService));
 
                         }
                     }).bind(port);
