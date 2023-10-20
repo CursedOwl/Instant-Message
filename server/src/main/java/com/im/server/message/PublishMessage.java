@@ -5,6 +5,8 @@ public class PublishMessage {
 
     private Integer to;
 
+    private Boolean isPrivate;
+
     private String message;
 
     private Long timeStamp;
@@ -17,6 +19,14 @@ public class PublishMessage {
         this.to = to;
         this.message = message;
         this.timeStamp = timeStamp;
+    }
+
+    public Boolean getPrivate() {
+        return isPrivate;
+    }
+
+    public void setPrivate(Boolean aPrivate) {
+        isPrivate = aPrivate;
     }
 
     public Integer getFrom() {

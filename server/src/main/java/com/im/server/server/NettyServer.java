@@ -6,6 +6,8 @@ import com.im.server.handler.IMProtocolInboundHandler;
 import com.im.server.processor.EncryptProcessor;
 import com.im.server.processor.SerializeProcessor;
 import com.im.server.processor.impl.AESEncryptor;
+import com.im.server.service.GroupService;
+import com.im.server.service.KafkaService;
 import com.im.server.service.MessageService;
 import com.im.server.service.UserService;
 import io.netty.bootstrap.ServerBootstrap;
@@ -19,6 +21,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -40,6 +43,15 @@ public class NettyServer {
 
     @Autowired
     private MessageService messageService;
+
+    @Autowired
+    private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private KafkaService kafkaService;
+
+    @Autowired
+    private GroupService groupService;
 
     @Value("${im.secret}")
     private String secret;
@@ -63,7 +75,8 @@ public class NettyServer {
                             nioSocketChannel.pipeline()
 //                                    .addLast(new IMProtocolOutbound(encryptProcessorMap,serializeProcessorMap))
                                     .addLast(new IMProtocolCodec(encryptProcessorMap,serializeProcessorMap))
-                                    .addLast(new IMProtocolInboundHandler(secret,ac,userService,messageService));
+                                    .addLast(new IMProtocolInboundHandler(secret,ac,userService,
+                                            messageService,redisTemplate,kafkaService,groupService));
 
                         }
                     }).bind(port);
