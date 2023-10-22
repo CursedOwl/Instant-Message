@@ -1,12 +1,12 @@
 package com.im.server.factory;
 
-import com.im.server.entity.IMProtocol;
+import com.im.server.message.IMProtocol;
 
 import static com.im.server.common.ProtocolConstants.*;
 
 public class ProtocolFactory {
     public static <T> IMProtocol<T> createSimpleProtocol(T body){
-        return createProtocol(body,AES_ENCRYPT,PROTOBUF_ALGORITHM,PUBLISH_COMMAND,DEFAULT_STATUS,OBJECT_TYPE);
+        return createProtocol(body,NO_ENCRYPT,JSON_ALGORITHM,PUBLISH_COMMAND,DEFAULT_STATUS,OBJECT_TYPE);
     }
 
     public static <T> IMProtocol<T> createPublishProtocol(T body,byte encrypt,byte serializeAlgorithm) {

@@ -1,9 +1,10 @@
 package com.im.server.codec;
 
 import com.im.server.common.ProtocolConstants;
-import com.im.server.entity.IMProtocol;
+import com.im.server.message.IMProtocol;
 import com.im.server.factory.ProtocolFactory;
 import com.im.server.message.ConnectionRequest;
+import com.im.server.message.PublishMessage;
 import com.im.server.processor.EncryptProcessor;
 import com.im.server.processor.SerializeProcessor;
 import io.netty.buffer.ByteBuf;
@@ -200,6 +201,13 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol<Object>> {
                     case ProtocolConstants.CONNECTION_COMMAND:{
                         imMessage.setClazz(ConnectionRequest.class);
                         imMessage.setBody(serializeProcessor.deserialize(encryptProcessor.decrypt(body), ConnectionRequest.class));
+                        list.add(imMessage);
+                        resetNow();
+                        break;
+                    }
+                    case ProtocolConstants.PUBLISH_COMMAND:{
+                        imMessage.setClazz(PublishMessage.class);
+                        imMessage.setBody(serializeProcessor.deserialize(encryptProcessor.decrypt(body), PublishMessage.class));
                         list.add(imMessage);
                         resetNow();
                         break;

@@ -1,11 +1,8 @@
 package com.im.server.handler;
 
-import cn.hutool.core.util.StrUtil;
 import com.im.server.common.KafkaConstants;
 import com.im.server.common.LoginConstants;
-import com.im.server.common.ProtocolConstants;
-import com.im.server.common.RedisConstants;
-import com.im.server.entity.IMProtocol;
+import com.im.server.message.IMProtocol;
 import com.im.server.factory.ProtocolFactory;
 import com.im.server.message.ConnectionCallback;
 import com.im.server.message.ConnectionRequest;
@@ -20,7 +17,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.java.tuple.Tuple2;
-import org.apache.ibatis.annotations.Case;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
@@ -75,20 +71,20 @@ public class IMProtocolInboundHandler extends SimpleChannelInboundHandler<IMProt
                if(msg.getStatus()==CONNECTION_FIRST){
                    if(!userService.account(connectionRequest.getAccount())){
                        ConnectionCallback cb = ConnectionCallback.fail("account not exist", LoginConstants.ACCOUNT_NOT_FOUND);
-                       IMProtocol<Object> protocol = ProtocolFactory.createProtocol(cb, AES_ENCRYPT, PROTOBUF_ALGORITHM, CONNECTION_COMMAND, FAIL_STATUS, OBJECT_TYPE);
+                       IMProtocol<Object> protocol = ProtocolFactory.createProtocol(cb, NO_ENCRYPT, JSON_ALGORITHM, CONNECTION_COMMAND, FAIL_STATUS, OBJECT_TYPE);
                        ctx.writeAndFlush(protocol);
                        return;
                    }
                    if(!userService.login(connectionRequest.getAccount(),connectionRequest.getPassword())){
                        ConnectionCallback cb = ConnectionCallback.fail("wrong password", LoginConstants.PASSWORD_ERROR);
-                       IMProtocol<Object> protocol = ProtocolFactory.createProtocol(cb, AES_ENCRYPT, PROTOBUF_ALGORITHM, CONNECTION_COMMAND, FAIL_STATUS, OBJECT_TYPE);
+                       IMProtocol<Object> protocol = ProtocolFactory.createProtocol(cb, NO_ENCRYPT, JSON_ALGORITHM, CONNECTION_COMMAND, FAIL_STATUS, OBJECT_TYPE);
                        ctx.writeAndFlush(protocol);
                        return;
                    }
                    String token = TokenUtil.create(secret, connectionRequest.getAccount());
                    ConnectionCallback cb = ConnectionCallback.success(token, LoginConstants.SUCCESS);
                    IMProtocol<Object> protocol = ProtocolFactory.createProtocol(
-                           cb, AES_ENCRYPT, PROTOBUF_ALGORITHM,
+                           cb, NO_ENCRYPT, JSON_ALGORITHM,
                            CONNECTION_COMMAND, CONNECTION_SECOND, OBJECT_TYPE);
                    ctx.writeAndFlush(protocol);
                    return;
@@ -114,10 +110,16 @@ public class IMProtocolInboundHandler extends SimpleChannelInboundHandler<IMProt
                if (publish.getPrivate()){
 //                   TODO 单机节点直接从Map中查询，而分布式节点未找到存空数据到Redis防止穿透
                    Channel toChannel;
+                   if(!accountWithChannel.containsKey(to)){
+                       break;
+                   }
                    if ((toChannel=accountWithChannel.get(to))!=null) {
                        IMProtocol<PublishMessage> simpleProtocol = ProtocolFactory.createSimpleProtocol(publish);
 //                   用户在线直接写入，而不管在线与否都存入ES中，拉取离线消息则用时间戳去查询ES
                        toChannel.writeAndFlush(simpleProtocol);
+                   }else {
+//                       懒删除，当有人发送消息再删除
+                       accountWithChannel.remove(to);
                    }
                }else {
                    List<Integer> members;

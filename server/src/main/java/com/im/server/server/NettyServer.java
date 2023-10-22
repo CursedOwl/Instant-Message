@@ -6,6 +6,7 @@ import com.im.server.handler.IMProtocolInboundHandler;
 import com.im.server.processor.EncryptProcessor;
 import com.im.server.processor.SerializeProcessor;
 import com.im.server.processor.impl.AESEncryptor;
+import com.im.server.processor.impl.JsonSerializer;
 import com.im.server.service.GroupService;
 import com.im.server.service.KafkaService;
 import com.im.server.service.MessageService;
@@ -62,6 +63,7 @@ public class NettyServer {
         this.encryptProcessorMap = new HashMap<>();
         this.serializeProcessorMap = new HashMap<>();
         encryptProcessorMap.put(ProtocolConstants.AES_ENCRYPT,new AESEncryptor());
+        serializeProcessorMap.put(ProtocolConstants.JSON_ALGORITHM,new JsonSerializer());
     }
 
     public void launch(int port) {

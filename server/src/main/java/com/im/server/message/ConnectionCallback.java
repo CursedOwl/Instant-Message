@@ -6,7 +6,11 @@ public class ConnectionCallback {
     private static boolean success;
     private byte status;
 
+//    正常情况下发的是JWT，其次是报错信息
     private String message;
+
+    private String secret;
+
 
     public static ConnectionCallback fail(String message,byte status){
         return new ConnectionCallback(false, status, message);

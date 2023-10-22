@@ -1,4 +1,4 @@
-package com.im.server.entity;
+package com.im.server.message;
 
 
 /**

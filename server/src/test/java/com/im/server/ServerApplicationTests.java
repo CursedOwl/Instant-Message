@@ -2,9 +2,8 @@ package com.im.server;
 
 import com.im.server.codec.IMProtocolCodec;
 import com.im.server.common.ProtocolConstants;
-import com.im.server.entity.IMProtocol;
+import com.im.server.message.IMProtocol;
 import com.im.server.factory.ProtocolFactory;
-import com.im.server.handler.IMProtocolInboundHandler;
 import com.im.server.processor.EncryptProcessor;
 import com.im.server.processor.SerializeProcessor;
 import com.im.server.processor.impl.AESEncryptor;
@@ -21,7 +20,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import org.junit.jupiter.api.Test;
 
 import java.io.*;
-import java.net.Socket;
 import java.util.HashMap;
 
 class ServerApplicationTests {
@@ -65,8 +63,8 @@ class ServerApplicationTests {
     public void contextLoads3(){
         encryptProcessorMap.put(ProtocolConstants.AES_ENCRYPT,new AESEncryptor());
         EmbeddedChannel channel = new EmbeddedChannel(
-                new IMProtocolCodec(encryptProcessorMap, serializeProcessorMap),
-                new IMProtocolInboundHandler(null,null,null,null));
+                new IMProtocolCodec(encryptProcessorMap, serializeProcessorMap));
+//                new IMProtocolInboundHandler(null,null,null,null));
 
         ByteBuf byteBuf = Unpooled.copiedBuffer(new byte[]{0x77, 0x22});
         channel.writeInbound(byteBuf);
