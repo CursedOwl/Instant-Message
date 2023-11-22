@@ -6,7 +6,6 @@ import com.im.feign.entity.RedBag;
 import com.im.feign.entity.ResponseEntity;
 import com.im.server.common.KafkaConstants;
 import com.im.server.common.LoginConstants;
-import com.im.server.entity.RedBag;
 import com.im.server.message.IMProtocol;
 import com.im.server.factory.ProtocolFactory;
 import com.im.server.message.ConnectionCallback;
