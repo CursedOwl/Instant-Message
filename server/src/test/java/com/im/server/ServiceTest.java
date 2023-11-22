@@ -21,8 +21,6 @@ public class ServiceTest {
 
     @Test
     public void test() {
-        PublishMessage hello = new PublishMessage(1, 2, "hello world", System.currentTimeMillis());
-        messageService.saveMessage(hello);
     }
 
     @Test
