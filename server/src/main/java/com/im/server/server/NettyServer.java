@@ -1,5 +1,6 @@
 package com.im.server.server;
 
+import com.im.feign.client.DealClient;
 import com.im.server.codec.IMProtocolCodec;
 import com.im.server.common.ProtocolConstants;
 import com.im.server.handler.IMProtocolInboundHandler;
@@ -7,6 +8,7 @@ import com.im.server.processor.EncryptProcessor;
 import com.im.server.processor.SerializeProcessor;
 import com.im.server.processor.impl.AESEncryptor;
 import com.im.server.processor.impl.JsonSerializer;
+import com.im.server.processor.impl.NOEncryptor;
 import com.im.server.service.GroupService;
 import com.im.server.service.KafkaService;
 import com.im.server.service.MessageService;
@@ -54,6 +56,9 @@ public class NettyServer {
     @Autowired
     private GroupService groupService;
 
+    @Autowired
+    private DealClient dealClient;
+
     @Value("${im.secret}")
     private String secret;
 
@@ -62,6 +67,7 @@ public class NettyServer {
     public NettyServer(){
         this.encryptProcessorMap = new HashMap<>();
         this.serializeProcessorMap = new HashMap<>();
+        encryptProcessorMap.put(ProtocolConstants.NO_ENCRYPT,new NOEncryptor());
         encryptProcessorMap.put(ProtocolConstants.AES_ENCRYPT,new AESEncryptor());
         serializeProcessorMap.put(ProtocolConstants.JSON_ALGORITHM,new JsonSerializer());
     }
@@ -78,7 +84,7 @@ public class NettyServer {
 //                                    .addLast(new IMProtocolOutbound(encryptProcessorMap,serializeProcessorMap))
                                     .addLast(new IMProtocolCodec(encryptProcessorMap,serializeProcessorMap))
                                     .addLast(new IMProtocolInboundHandler(secret,ac,userService,
-                                            messageService,redisTemplate,kafkaService,groupService));
+                                            messageService,redisTemplate,kafkaService,groupService,dealClient));
 
                         }
                     }).bind(port);

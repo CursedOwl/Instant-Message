@@ -26,7 +26,7 @@ public class TokenUtil {
         payload.put("admin",false);
 
         Calendar instance = Calendar.getInstance();
-        instance.add(Calendar.MINUTE,90);
+        instance.add(Calendar.DAY_OF_WEEK,1);
 
         return Jwts.builder()
                 .setHeader(header)
@@ -43,14 +43,14 @@ public class TokenUtil {
             Claims body = claimsJws.getBody();
 
             if (body.getExpiration().before(DateTime.now())) {
-                log.warn("Token Expired");
+                log.warn("Token Expired:"+token);
                 return Tuple2.of(false,null);
             }
-            log.info("Token Accepted");
+            log.info("Token Accepted:"+token);
             return Tuple2.of(true,body.get("account",String.class));
 
         } catch (Exception e) {
-            log.warn("Token Invalid");
+            log.warn("Token Invalid:"+token);
             e.printStackTrace();
             return Tuple2.of(false,null);
         }

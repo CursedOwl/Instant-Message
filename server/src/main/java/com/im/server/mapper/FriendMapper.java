@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface FriendMapper {
     public List<User> selectFriends(Integer id,Integer offset);
+
+    void insert(Integer id, Integer friend);
 }

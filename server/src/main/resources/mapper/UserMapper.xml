@@ -3,6 +3,18 @@
 <mapper namespace="com.im.server.mapper.UserMapper">
 
     <insert id="insertUser">
-
+        insert into tbl_user values (0,#{name},#{account},#{password},0,0);
     </insert>
+    <update id="updateMoney">
+        update tbl_user set money=money+#{amount} where account=#{account};
+    </update>
+    <select id="selectUserByAccount" resultType="java.lang.Integer">
+        select count(*) from tbl_user where account=#{account};
+    </select>
+    <select id="selectUserByAccountAndPassword" resultType="com.im.server.entity.User">
+        select * from tbl_user where account=#{account} and password=#{password};
+    </select>
+    <select id="selectMoneyByAccount" resultType="java.lang.Double">
+        select money from tbl_user where account=#{account};
+    </select>
 </mapper>

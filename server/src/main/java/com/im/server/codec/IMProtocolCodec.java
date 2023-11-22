@@ -20,7 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @Slf4j
 public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol<Object>> {
 
-    private IMProtocol<Object> imMessage;
+    private IMProtocol<Object> imMessage=new IMProtocol<>();
 
     private Integer badMessageCount=0;
 
@@ -98,7 +98,7 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol<Object>> {
         if(resetRequest.get()){
             resetNow();
         }
-        log.info("["+channelHandlerContext.channel()+"]Remains:"+byteBuf.readableBytes());
+        log.info("["+channelHandlerContext.channel()+"] Remains:"+byteBuf.readableBytes());
         byte temp;
         switch (currentState){
            case READ_MAGIC:{
@@ -234,7 +234,7 @@ public class IMProtocolCodec extends ByteToMessageCodec<IMProtocol<Object>> {
     private void resetNow() {
         resetRequest.lazySet(true);
         currentState=State.READ_MAGIC;
-        imMessage=null;
+        imMessage=new IMProtocol<>();
     }
 
 

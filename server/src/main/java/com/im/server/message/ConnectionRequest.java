@@ -1,17 +1,34 @@
 package com.im.server.message;
 
 public class ConnectionRequest {
-    private String account;
+    private Long account;
 
     private String password;
 
     private String jwt;
 
-    public String getAccount() {
+    public ConnectionRequest(){}
+
+    public ConnectionRequest(Long account, String password, String jwt) {
+        this.account = account;
+        this.password = password;
+        this.jwt = jwt;
+    }
+
+    @Override
+    public String toString() {
+        return "ConnectionRequest{" +
+                "account='" + account + '\'' +
+                ", password='" + password + '\'' +
+                ", jwt='" + jwt + '\'' +
+                '}';
+    }
+
+    public Long getAccount() {
         return account;
     }
 
-    public void setAccount(String account) {
+    public void setAccount(Long account) {
         this.account = account;
     }
 

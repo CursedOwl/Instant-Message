@@ -5,6 +5,8 @@ public class PublishMessage {
 
     private Integer to;
 
+    private Byte type;
+
     private Boolean isPrivate;
 
     private String message;
@@ -14,11 +16,21 @@ public class PublishMessage {
     public PublishMessage() {
     }
 
-    public PublishMessage(Integer from, Integer to, String message, Long timeStamp) {
+    public PublishMessage(Integer from, Integer to, Byte type, Boolean isPrivate, String message, Long timeStamp) {
         this.from = from;
         this.to = to;
+        this.type = type;
+        this.isPrivate = isPrivate;
         this.message = message;
         this.timeStamp = timeStamp;
+    }
+
+    public Byte getType() {
+        return type;
+    }
+
+    public void setType(Byte type) {
+        this.type = type;
     }
 
     public Boolean getPrivate() {

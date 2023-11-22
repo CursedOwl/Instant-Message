@@ -1,7 +1,10 @@
 package com.im.server;
 
+import com.google.gson.Gson;
 import com.im.server.codec.IMProtocolCodec;
 import com.im.server.common.ProtocolConstants;
+import com.im.server.handler.ClientInboundHandler;
+import com.im.server.message.ConnectionRequest;
 import com.im.server.message.IMProtocol;
 import com.im.server.factory.ProtocolFactory;
 import com.im.server.processor.EncryptProcessor;
@@ -10,6 +13,7 @@ import com.im.server.processor.impl.AESEncryptor;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -26,6 +30,7 @@ class ServerApplicationTests {
 
     @Test
     void contextLoads() throws InterruptedException, IOException {
+        Gson gson=new Gson();
         NioEventLoopGroup group = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(group)
@@ -45,11 +50,16 @@ class ServerApplicationTests {
         Channel future = bootstrap.connect("localhost", 8081).sync().channel();
 
         // 发送消息到服务器
-        ByteBuf buf = Unpooled.copiedBuffer(new byte[]{0x77,0x22});
+        ByteBuf buf = UnpooledByteBufAllocator.DEFAULT.buffer();
+//        MAGIC-VERSION-SERIALIZE-ENCRYPT-COMMAND-STATUS-TYPE
+        buf.writeBytes(new byte[]{0x77,0x01,0x01,0x00,0x01,0x01,0x00});
+//        写入正文长度与内容
+        ConnectionRequest connectionRequest = new ConnectionRequest(123456L,"123456",null);
+        String content = gson.toJson(connectionRequest);
+        buf.writeInt(content.getBytes().length);
+        buf.writeBytes(content.getBytes());
         future.writeAndFlush(buf);
-        Thread.sleep(1000);
-        ByteBuf buf2 = Unpooled.copiedBuffer(new byte[]{0x77,0x22});
-        future.writeAndFlush(buf2);
+
         // 等待连接关闭
         future.closeFuture().sync();
 

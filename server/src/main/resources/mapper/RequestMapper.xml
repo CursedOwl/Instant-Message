@@ -4,7 +4,12 @@
 
 
     <insert id="insertRequest">
-        INSERT INTO tbl_request (`from`, `to` , `result`)
-        values (#{from}, #{to}, 0)
+        INSERT INTO tbl_request (`from`, `to` , `result`) VALUES (#{id}, #{friend}, 0);
     </insert>
+    <update id="updateState">
+        UPDATE tbl_request SET result=#{result} where `from`=#{from} AND `to` = #{to};
+    </update>
+    <select id="selectRequest" resultType="com.im.server.entity.Request">
+        SELECT * FROM tbl_request WHERE `to` = #{id} AND `result` = 0;
+    </select>
 </mapper>

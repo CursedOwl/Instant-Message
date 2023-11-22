@@ -3,7 +3,7 @@ package com.im.server.message;
 import com.im.server.common.LoginConstants;
 
 public class ConnectionCallback {
-    private static boolean success;
+    private boolean success;
     private byte status;
 
 //    正常情况下发的是JWT，其次是报错信息
@@ -24,6 +24,24 @@ public class ConnectionCallback {
         this.success = success;
         this.status = status;
         this.message = message;
+    }
+
+
+    @Override
+    public String toString() {
+        return "ConnectionCallback{" +
+                "status=" + status +
+                ", message='" + message + '\'' +
+                ", secret='" + secret + '\'' +
+                '}';
+    }
+
+    public String getSecret() {
+        return secret;
+    }
+
+    public void setSecret(String secret) {
+        this.secret = secret;
     }
 
     public boolean isSuccess() {

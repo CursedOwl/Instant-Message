@@ -3,14 +3,14 @@ package com.im.server.entity;
 public class User {
     private String name;
 
-    private Integer account;
+    private Long account;
 
     private String password;
 
     public User() {
     }
 
-    public User(String name, Integer account, String password) {
+    public User(String name, Long account, String password) {
         this.name = name;
         this.account = account;
         this.password = password;
@@ -24,11 +24,11 @@ public class User {
         this.name = name;
     }
 
-    public Integer getAccount() {
+    public Long getAccount() {
         return account;
     }
 
-    public void setAccount(Integer account) {
+    public void setAccount(Long account) {
         this.account = account;
     }
 

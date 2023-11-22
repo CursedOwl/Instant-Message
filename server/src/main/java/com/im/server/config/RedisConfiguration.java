@@ -1,5 +1,8 @@
 package com.im.server.config;
 
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -23,5 +26,14 @@ public class RedisConfiguration {
         redisTemplate.setValueSerializer(genericJackson2JsonRedisSerializer);
         redisTemplate.setHashValueSerializer(genericJackson2JsonRedisSerializer);
         return redisTemplate;
+    }
+
+
+    @Bean
+    public RedissonClient redissonClient(){
+        Config config = new Config();
+        config.useSingleServer().setAddress("redis://43.138.214.65:6379")
+                .setPassword("8F%aM#o@2l");
+        return Redisson.create(config);
     }
 }

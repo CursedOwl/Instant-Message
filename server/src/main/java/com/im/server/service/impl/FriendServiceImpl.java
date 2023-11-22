@@ -2,6 +2,7 @@ package com.im.server.service.impl;
 
 import cn.hutool.core.bean.BeanUtil;
 import com.im.server.dto.UserDto;
+import com.im.server.entity.Request;
 import com.im.server.entity.User;
 import com.im.server.mapper.FriendMapper;
 import com.im.server.mapper.RequestMapper;
@@ -33,5 +34,21 @@ public class FriendServiceImpl implements FriendService {
     @Override
     public void addFriend(Integer id, Integer friendId) {
         requestMapper.insertRequest(id,friendId);
+    }
+
+    @Override
+    public List<Request> getFriendRequest(Integer id,Integer offset) {
+        return requestMapper.selectRequest(id, offset);
+    }
+
+    @Override
+    public void accept(Integer id, Integer friend) {
+        requestMapper.updateState(id,friend,1);
+        friendMapper.insert(id,friend);
+        friendMapper.insert(friend,id);
+    }
+
+    public void reject(Integer id , Integer friend){
+        requestMapper.updateState(id,friend,2);
     }
 }

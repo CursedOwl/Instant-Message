@@ -34,6 +34,8 @@ public class ProtocolConstants {
 
     public static final byte BAD_MESSAGE_COMMAND=0x03;
 
+
+
 //    状态位
 
     public static final byte DEFAULT_STATUS=0x00;
@@ -56,6 +58,15 @@ public class ProtocolConstants {
         public static final byte AES_ENCRYPT = 0x01;
 
         public static final byte DES_ENCRYPT = 0x02;
+
+
+//        消息类型
+        public static final byte TEXT_TYPE = 0x01;
+
+        public static final byte IMAGE_TYPE = 0x02;
+
+        public static final byte RED_BAG_TYPE = 0x02;
+
 
 
 }
