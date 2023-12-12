@@ -1,10 +1,10 @@
-package com.im.server.entity;
+package com.im.server.message;
 
 
 /**
  * @ClassName 协议头各字段均用一个byte表示
  */
-public class IMProtocol {
+public class IMProtocol<T> {
     private byte magic;
 
     private byte version;
@@ -21,12 +21,14 @@ public class IMProtocol {
 
     private Integer length;
 
-    private byte[] body;
+    private Class<?> clazz;
+
+    private T body;
 
     public IMProtocol() {
     }
 
-    public IMProtocol(byte magic, byte version, byte serializeAlgorithm, byte command, byte status, Integer length, byte[] body) {
+    public IMProtocol(byte magic, byte version, byte serializeAlgorithm, byte command, byte status, Integer length, T body) {
         this.magic = magic;
         this.version = version;
         this.serializeAlgorithm = serializeAlgorithm;
@@ -34,6 +36,14 @@ public class IMProtocol {
         this.status = status;
         this.length = length;
         this.body = body;
+    }
+
+    public Class<?> getClazz() {
+        return clazz;
+    }
+
+    public void setClazz(Class<?> clazz) {
+        this.clazz = clazz;
     }
 
     public byte getEncrypt() {
@@ -100,11 +110,27 @@ public class IMProtocol {
         this.length = length;
     }
 
-    public byte[] getBody() {
+    public Object getBody() {
         return body;
     }
 
-    public void setBody(byte[] body) {
+    public void setBody(T body) {
         this.body = body;
+    }
+
+    @Override
+    public String toString() {
+        return "IMProtocol{" +
+                "magic=" + magic +
+                ", version=" + version +
+                ", serializeAlgorithm=" + serializeAlgorithm +
+                ", encrypt=" + encrypt +
+                ", command=" + command +
+                ", status=" + status +
+                ", dataType=" + dataType +
+                ", length=" + length +
+                ", clazz=" + clazz +
+                ", body=" + body +
+                '}';
     }
 }

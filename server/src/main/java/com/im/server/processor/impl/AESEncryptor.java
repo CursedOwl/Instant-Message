@@ -14,5 +14,10 @@ public class AESEncryptor extends EncryptProcessor {
         return new byte[0];
     }
 
+    @Override
+    public byte[] decrypt(byte[] body) {
+        return new byte[0];
+    }
+
 
 }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.im.server.mapper.RequestMapper">
+
+
+    <insert id="insertRequest">
+        INSERT INTO tbl_request (`from`, `to` , `result`) VALUES (#{id}, #{friend}, 0);
+    </insert>
+    <update id="updateState">
+        UPDATE tbl_request SET result=#{result} where `from`=#{from} AND `to` = #{to};
+    </update>
+    <select id="selectRequest" resultType="com.im.server.entity.Request">
+        SELECT * FROM tbl_request WHERE `to` = #{id} AND `result` = 0;
+    </select>
+</mapper>

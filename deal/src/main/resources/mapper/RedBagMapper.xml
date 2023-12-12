@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.im.deal.mapper.RedBagMapper">
+
+    <insert id="insertRedBag">
+        INSERT INTO tbl_redbag
+        VALUES (#{id},#{account},#{to},#{isGroup},#{amount},#{people});
+    </insert>
+</mapper>

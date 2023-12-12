@@ -6,4 +6,6 @@ public abstract class EncryptProcessor {
     public abstract byte[] encrypt(byte[] body);
 
     public abstract byte[] decrypt(ByteBuf byteBuf, int length);
+
+    public abstract byte[] decrypt(byte[] body);
 }
